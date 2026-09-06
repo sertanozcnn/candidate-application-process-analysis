@@ -1,0 +1,24 @@
+{
+  "name": "capa",
+  "private": true,
+  "scripts": {
+    "dev:candidate": "npm run dev --workspace @capa/candidate",
+    "dev:admin": "npm run dev --workspace @capa/admin",
+    "dev:api": "cd services/api-go && go run ./cmd/api",
+    "db:up": "docker compose -f infra/compose/compose.yml up -d",
+    "db:down": "docker compose -f infra/compose/compose.yml down",
+    "db:logs": "docker compose -f infra/compose/compose.yml logs -f postgres",
+    "lint": "npm run lint --workspace @capa/candidate && npm run lint --workspace @capa/admin",
+    "typecheck": "npm run typecheck --workspace @capa/candidate && npm run typecheck --workspace @capa/admin",
+    "test": "cd services/api-go && go test ./...",
+    "build": "npm run build --workspace @capa/candidate && npm run build --workspace @capa/admin && cd services/api-go && go build -o ../../bin/capa-api ./cmd/api",
+    "check": "npm run typecheck && npm run lint && npm test && npm run build"
+  },
+  "engines": {
+    "node": ">=24.0.0 <25.0.0"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
+}

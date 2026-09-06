@@ -1,0 +1,23 @@
+name: capa
+
+services:
+  postgres:
+    image: postgres:18
+    container_name: capa-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${CAPA_POSTGRES_DB:-capa}
+      POSTGRES_USER: ${CAPA_POSTGRES_USER:-capa}
+      POSTGRES_PASSWORD: ${CAPA_POSTGRES_PASSWORD:-capa_local_password}
+    ports:
+      - "${CAPA_POSTGRES_HOST_PORT:-55432}:5432"
+    volumes:
+      - capa_postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  capa_postgres_data:

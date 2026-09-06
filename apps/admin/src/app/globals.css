@@ -1,0 +1,19 @@
+@import "tailwindcss";
+@source "../../../../packages/ui/src";
+
+@theme {
+  --color-capa-brand: #ad387b;
+  --color-capa-bg: #f7f7fb;
+  --color-capa-surface: #efedff;
+  --color-capa-panel: #ffffff;
+  --color-capa-ink: #102033;
+  --color-capa-muted: #667085;
+  --color-capa-line: #dedde9;
+  --color-capa-coral: #f26d55;
+  --color-capa-rose: #d9559f;
+  --color-capa-green: #7fa88a;
+  --color-capa-violet: #8a6fd6;
+  --color-capa-blue-soft: #a9b2ff;
+  --color-capa-blue: #5145ff;
+  --color-capa-blue-strong: #4034df;
+}

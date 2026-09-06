@@ -1,0 +1,51 @@
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+credentials.json
+service-account*.json
+
+# Dependencies and build output
+node_modules/
+.next/
+.turbo/
+.vercel/
+out/
+dist/
+build/
+bin/
+*.exe
+coverage/
+coverage.out
+*.test
+*.tsbuildinfo
+__pycache__/
+.venv/
+
+# Runtime data, applications, uploads and database backups
+uploads/
+private/
+data/
+backups/
+*.dump
+*.backup
+*.sqlite
+*.sqlite3
+*.log
+logs/
+tmp/
+
+# Local tools and editor state
+.idea/
+.vscode/
+.obsidian/
+.DS_Store
+Thumbs.db
+playwright-report/
+test-results/
+
+# Keep SQL migrations and dependency lockfiles versioned.
