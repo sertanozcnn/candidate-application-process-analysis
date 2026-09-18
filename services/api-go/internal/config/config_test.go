@@ -12,6 +12,7 @@ func TestLoadDefaults(t *testing.T) {
 	t.Setenv("CAPA_LOG_LEVEL", "")
 	t.Setenv("CAPA_API_ADDR", "")
 	t.Setenv("CAPA_API_SHUTDOWN_TIMEOUT", "")
+	t.Setenv("CAPA_ADMIN_ORIGINS", "")
 
 	cfg, err := Load()
 	if err != nil {
@@ -32,6 +33,9 @@ func TestLoadDefaults(t *testing.T) {
 	if cfg.ShutdownTimeout != 10*time.Second {
 		t.Fatalf("ShutdownTimeout = %s, want 10s", cfg.ShutdownTimeout)
 	}
+	if len(cfg.AdminOrigins) != 2 || cfg.AdminOrigins[0] != "http://localhost:3001" {
+		t.Fatalf("AdminOrigins = %#v, want local admin origins", cfg.AdminOrigins)
+	}
 }
 
 func TestLoadOverrides(t *testing.T) {
@@ -40,6 +44,7 @@ func TestLoadOverrides(t *testing.T) {
 	t.Setenv("CAPA_API_ADDR", "127.0.0.1:18080")
 	t.Setenv("CAPA_DATABASE_URL", "postgres://user:pass@localhost:15432/db?sslmode=disable")
 	t.Setenv("CAPA_API_SHUTDOWN_TIMEOUT", "2s")
+	t.Setenv("CAPA_ADMIN_ORIGINS", "https://admin.example, https://admin.internal")
 
 	cfg, err := Load()
 	if err != nil {
@@ -59,6 +64,9 @@ func TestLoadOverrides(t *testing.T) {
 	}
 	if cfg.ShutdownTimeout != 2*time.Second {
 		t.Fatalf("ShutdownTimeout = %s, want 2s", cfg.ShutdownTimeout)
+	}
+	if len(cfg.AdminOrigins) != 2 || cfg.AdminOrigins[1] != "https://admin.internal" {
+		t.Fatalf("AdminOrigins = %#v, want configured origins", cfg.AdminOrigins)
 	}
 }
 

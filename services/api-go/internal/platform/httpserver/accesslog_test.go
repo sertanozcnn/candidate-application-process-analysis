@@ -20,6 +20,9 @@ func TestAccessLogWritesRequestSummary(t *testing.T) {
 	}))
 
 	request := httptest.NewRequest(http.MethodPost, "/health/live?token=secret", nil)
+	request.Header.Set("Authorization", "Bearer session-token-secret")
+	request.Header.Set("X-Password", "password-secret")
+	request.AddCookie(&http.Cookie{Name: "capa_admin_session", Value: "cookie-secret"})
 	response := httptest.NewRecorder()
 
 	handler.ServeHTTP(response, request)
@@ -35,8 +38,10 @@ func TestAccessLogWritesRequestSummary(t *testing.T) {
 			t.Fatalf("log line %q does not contain %q", logLine, want)
 		}
 	}
-	if strings.Contains(logLine, "token=secret") {
-		t.Fatalf("log line leaked query string: %q", logLine)
+	for _, secret := range []string{"token=secret", "session-token-secret", "password-secret", "cookie-secret"} {
+		if strings.Contains(logLine, secret) {
+			t.Fatalf("log line leaked secret %q: %q", secret, logLine)
+		}
 	}
 }
 

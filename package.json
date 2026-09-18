@@ -12,7 +12,11 @@
     "typecheck": "npm run typecheck --workspace @capa/candidate && npm run typecheck --workspace @capa/admin",
     "test": "cd services/api-go && go test ./...",
     "build": "npm run build --workspace @capa/candidate && npm run build --workspace @capa/admin && cd services/api-go && go build -o ../../bin/capa-api ./cmd/api",
-    "check": "npm run typecheck && npm run lint && npm test && npm run build"
+    "check": "npm run typecheck && npm run lint && npm test && npm run build",
+    "db:migrate": "cd services/api-go && go run ./cmd/migrate up",
+    "db:rollback": "cd services/api-go && go run ./cmd/migrate down",
+    "db:status": "cd services/api-go && go run ./cmd/migrate status",
+    "admin:create": "cd services/api-go && go run ./cmd/admin create"
   },
   "engines": {
     "node": ">=24.0.0 <25.0.0"

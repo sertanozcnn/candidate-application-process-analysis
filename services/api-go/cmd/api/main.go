@@ -8,6 +8,8 @@ import (
 	"syscall"
 
 	"capa/services/api-go/internal/config"
+	"capa/services/api-go/internal/modules/adminauth"
+	"capa/services/api-go/internal/modules/application"
 	"capa/services/api-go/internal/modules/health"
 	"capa/services/api-go/internal/platform/httpserver"
 	"capa/services/api-go/internal/platform/logger"
@@ -36,6 +38,12 @@ func main() {
 
 	mux := http.NewServeMux()
 	health.RegisterRoutes(mux, db)
+	authRepo := adminauth.NewRepository(db)
+	authService := adminauth.NewService(authRepo)
+	adminauth.RegisterRoutes(mux, authService, cfg.AppEnv, cfg.AdminOrigins)
+	applicationRepo := application.NewRepository(db)
+	applicationService := application.NewService(applicationRepo)
+	application.RegisterRoutes(mux, applicationService, authService)
 	handler := httpserver.AccessLog(log, mux)
 
 	server := httpserver.New(httpserver.Config{
