@@ -16,7 +16,8 @@
     "db:migrate": "cd services/api-go && go run ./cmd/migrate up",
     "db:rollback": "cd services/api-go && go run ./cmd/migrate down",
     "db:status": "cd services/api-go && go run ./cmd/migrate status",
-    "admin:create": "cd services/api-go && go run ./cmd/admin create"
+    "admin:create": "cd services/api-go && go run ./cmd/admin create",
+    "postman:test": "newman run tests/postman/capa.postman_collection.json -e tests/postman/local.postman_environment.json"
   },
   "engines": {
     "node": ">=24.0.0 <25.0.0"
@@ -24,5 +25,8 @@
   "workspaces": [
     "apps/*",
     "packages/*"
-  ]
+  ],
+  "devDependencies": {
+    "newman": "^6.2.2"
+  }
 }

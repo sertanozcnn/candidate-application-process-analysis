@@ -1,6 +1,12 @@
 @import "tailwindcss";
 @source "../../../../packages/ui/src";
 
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
 @theme {
   --color-capa-brand: #ad387b;
   --color-capa-bg: #f7f7fb;

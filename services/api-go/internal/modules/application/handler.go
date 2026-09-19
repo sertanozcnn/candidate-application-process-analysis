@@ -19,9 +19,14 @@ type adminAuthenticator interface {
 	Authenticate(context.Context, string) (adminauth.Admin, error)
 }
 
+type interactionLinker interface {
+	AttachApplication(context.Context, string, string, string, string) error
+}
+
 type Handler struct {
 	service Service
 	auth    adminAuthenticator
+	linker  interactionLinker
 }
 
 type applicationResponse struct {
@@ -45,8 +50,12 @@ type errorResponse struct {
 	Message string `json:"message"`
 }
 
-func RegisterRoutes(mux *http.ServeMux, service Service, auth adminAuthenticator) {
-	h := Handler{service: service, auth: auth}
+func RegisterRoutes(mux *http.ServeMux, service Service, auth adminAuthenticator, linkers ...interactionLinker) {
+	var linker interactionLinker
+	if len(linkers) > 0 {
+		linker = linkers[0]
+	}
+	h := Handler{service: service, auth: auth, linker: linker}
 	mux.HandleFunc("/v1/candidate/applications", h.create)
 	mux.HandleFunc("/v1/admin/applications", h.list)
 	mux.HandleFunc("/v1/admin/applications/", h.detail)
@@ -74,6 +83,13 @@ func (h Handler) create(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusInternalServerError, "internal_error", "Beklenmeyen bir hata oluştu.")
 		}
 		return
+	}
+	if h.linker != nil {
+		if cookie, cookieErr := r.Cookie("capa_interaction_session"); cookieErr == nil && cookie.Value != "" {
+			if sessionID := r.Header.Get("X-Interaction-Session-ID"); sessionID != "" {
+				_ = h.linker.AttachApplication(r.Context(), sessionID, cookie.Value, item.ID, item.PositionCode)
+			}
+		}
 	}
 
 	writeJSON(w, http.StatusCreated, createResponse{ID: item.ID, Email: item.Email, PositionCode: item.PositionCode})

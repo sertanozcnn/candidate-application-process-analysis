@@ -1,0 +1,216 @@
+{
+  "info": {
+    "_postman_id": "capa-api-local",
+    "name": "CAPA API - Local",
+    "description": "CAPA local API smoke tests. All candidate data is synthetic and uses example.invalid.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "run_email", "value": "" },
+    { "key": "application_id", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Liveness",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/health/live", "host": ["{{baseUrl}}"], "path": ["health", "live"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+            "pm.test('status is ok', function () { pm.expect(pm.response.json().status).to.eql('ok'); });"
+          ] } }]
+        },
+        {
+          "name": "Readiness",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/health/ready", "host": ["{{baseUrl}}"], "path": ["health", "ready"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+            "pm.test('status is ready', function () { pm.expect(pm.response.json().status).to.eql('ready'); });"
+          ] } }]
+        }
+      ]
+    },
+    {
+      "name": "Candidate Applications",
+      "item": [
+        {
+          "name": "Create application - 201",
+          "event": [{ "listen": "prerequest", "script": { "exec": [
+            "pm.collectionVariables.set('run_email', 'postman-' + Date.now() + '@example.invalid');"
+          ] } }, { "listen": "test", "script": { "exec": [
+            "pm.test('status is 201', function () { pm.response.to.have.status(201); });",
+            "const body = pm.response.json();",
+            "pm.test('response has application id', function () { pm.expect(body.id).to.be.a('string').and.not.empty; });",
+            "pm.test('email is normalized', function () { pm.expect(body.email).to.eql(pm.collectionVariables.get('run_email')); });",
+            "pm.test('position is returned', function () { pm.expect(body.position_code).to.eql('backend'); });",
+            "pm.collectionVariables.set('application_id', body.id);"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"full_name\": \"Postman Test User\",\n  \"email\": \"{{run_email}}\",\n  \"position_code\": \"backend\",\n  \"experience\": \"Synthetic Postman experience text with enough characters.\"\n}" },
+            "url": { "raw": "{{baseUrl}}/v1/candidate/applications", "host": ["{{baseUrl}}"], "path": ["v1", "candidate", "applications"] }
+          }
+        },
+        {
+          "name": "Invalid application - 400",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"full_name\": \"A\",\n  \"email\": \"invalid\",\n  \"position_code\": \"designer\",\n  \"experience\": \"short\"\n}" },
+            "url": { "raw": "{{baseUrl}}/v1/candidate/applications", "host": ["{{baseUrl}}"], "path": ["v1", "candidate", "applications"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('status is 400', function () { pm.response.to.have.status(400); });",
+            "pm.test('error code is invalid_request', function () { pm.expect(pm.response.json().code).to.eql('invalid_request'); });"
+          ] } }]
+        },
+        {
+          "name": "Duplicate application - 409",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"full_name\": \"Postman Test User\",\n  \"email\": \"{{run_email}}\",\n  \"position_code\": \"backend\",\n  \"experience\": \"Synthetic Postman experience text with enough characters.\"\n}" },
+            "url": { "raw": "{{baseUrl}}/v1/candidate/applications", "host": ["{{baseUrl}}"], "path": ["v1", "candidate", "applications"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('status is 409', function () { pm.response.to.have.status(409); });",
+            "pm.test('error code is application_exists', function () { pm.expect(pm.response.json().code).to.eql('application_exists'); });"
+          ] } }]
+        }
+      ]
+    },
+    {
+      "name": "Interaction Sessions",
+      "item": [
+        {
+          "name": "Create interaction session - 201",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"position_code\": \"backend\"\n}" },
+            "url": { "raw": "{{baseUrl}}/v1/candidate/interaction-sessions", "host": ["{{baseUrl}}"], "path": ["v1", "candidate", "interaction-sessions"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('status is 201', function () { pm.response.to.have.status(201); });",
+            "const body = pm.response.json();",
+            "pm.test('session id is returned', function () { pm.expect(body.id).to.be.a('string').and.not.empty; });",
+            "pm.collectionVariables.set('interaction_session_id', body.id);"
+          ] } }]
+        },
+        {
+          "name": "Send event batch - 202",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"events\": [\n    {\n      \"event_id\": \"123e4567-e89b-12d3-a456-426614174001\",\n      \"sequence\": 1,\n      \"elapsed_ms\": 1200,\n      \"type\": \"session_start\",\n      \"metadata\": {}\n    }\n  ]\n}" },
+            "url": { "raw": "{{baseUrl}}/v1/candidate/interaction-sessions/{{interaction_session_id}}/events", "host": ["{{baseUrl}}"], "path": ["v1", "candidate", "interaction-sessions", "{{interaction_session_id}}", "events"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('status is 202', function () { pm.response.to.have.status(202); });",
+            "pm.test('one event accepted', function () { pm.expect(pm.response.json().accepted).to.eql(1); });"
+          ] } }]
+        },
+        {
+          "name": "Repeat event batch - idempotent",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"events\": [\n    {\n      \"event_id\": \"123e4567-e89b-12d3-a456-426614174001\",\n      \"sequence\": 1,\n      \"elapsed_ms\": 1200,\n      \"type\": \"session_start\",\n      \"metadata\": {}\n    }\n  ]\n}" },
+            "url": { "raw": "{{baseUrl}}/v1/candidate/interaction-sessions/{{interaction_session_id}}/events", "host": ["{{baseUrl}}"], "path": ["v1", "candidate", "interaction-sessions", "{{interaction_session_id}}", "events"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('status is 202', function () { pm.response.to.have.status(202); });",
+            "pm.test('repeat is duplicate', function () { pm.expect(pm.response.json().duplicate).to.eql(1); });"
+          ] } }]
+        },
+        {
+          "name": "Create second session - 201",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"position_code\": \"frontend\"\n}" },
+            "url": { "raw": "{{baseUrl}}/v1/candidate/interaction-sessions", "host": ["{{baseUrl}}"], "path": ["v1", "candidate", "interaction-sessions"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('status is 201', function () { pm.response.to.have.status(201); });",
+            "pm.collectionVariables.set('interaction_session_b_id', pm.response.json().id);"
+          ] } }]
+        },
+        {
+          "name": "Wrong session owner - 403",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"events\": [\n    {\n      \"event_id\": \"123e4567-e89b-12d3-a456-426614174010\",\n      \"sequence\": 1,\n      \"elapsed_ms\": 500,\n      \"type\": \"session_start\",\n      \"metadata\": {}\n    }\n  ]\n}" },
+            "url": { "raw": "{{baseUrl}}/v1/candidate/interaction-sessions/{{interaction_session_id}}/events", "host": ["{{baseUrl}}"], "path": ["v1", "candidate", "interaction-sessions", "{{interaction_session_id}}", "events"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('status is 403', function () { pm.response.to.have.status(403); });",
+            "pm.test('error code is forbidden', function () { pm.expect(pm.response.json().code).to.eql('forbidden'); });"
+          ] } }]
+        },
+        {
+          "name": "Unknown metadata - 400",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"events\": [\n    {\n      \"event_id\": \"123e4567-e89b-12d3-a456-426614174011\",\n      \"sequence\": 1,\n      \"elapsed_ms\": 500,\n      \"type\": \"field_focus\",\n      \"field_code\": \"experience\",\n      \"metadata\": { \"value\": \"must not be accepted\" }\n    }\n  ]\n}" },
+            "url": { "raw": "{{baseUrl}}/v1/candidate/interaction-sessions/{{interaction_session_b_id}}/events", "host": ["{{baseUrl}}"], "path": ["v1", "candidate", "interaction-sessions", "{{interaction_session_b_id}}", "events"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('status is 400', function () { pm.response.to.have.status(400); });",
+            "pm.test('payload content is not echoed', function () { pm.expect(pm.response.text()).to.not.include('must not be accepted'); });"
+          ] } }]
+        },
+        {
+          "name": "Valid event for session B - 202",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"events\": [\n    {\n      \"event_id\": \"123e4567-e89b-12d3-a456-426614174012\",\n      \"sequence\": 5,\n      \"elapsed_ms\": 900,\n      \"type\": \"field_focus\",\n      \"field_code\": \"experience\",\n      \"metadata\": {}\n    }\n  ]\n}" },
+            "url": { "raw": "{{baseUrl}}/v1/candidate/interaction-sessions/{{interaction_session_b_id}}/events", "host": ["{{baseUrl}}"], "path": ["v1", "candidate", "interaction-sessions", "{{interaction_session_b_id}}", "events"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('status is 202', function () { pm.response.to.have.status(202); });",
+            "pm.test('one event accepted', function () { pm.expect(pm.response.json().accepted).to.eql(1); });"
+          ] } }]
+        },
+        {
+          "name": "Out-of-order sequence - 409",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"events\": [\n    {\n      \"event_id\": \"123e4567-e89b-12d3-a456-426614174013\",\n      \"sequence\": 2,\n      \"elapsed_ms\": 1200,\n      \"type\": \"field_blur\",\n      \"field_code\": \"experience\",\n      \"metadata\": {}\n    }\n  ]\n}" },
+            "url": { "raw": "{{baseUrl}}/v1/candidate/interaction-sessions/{{interaction_session_b_id}}/events", "host": ["{{baseUrl}}"], "path": ["v1", "candidate", "interaction-sessions", "{{interaction_session_b_id}}", "events"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('status is 409', function () { pm.response.to.have.status(409); });",
+            "pm.test('error code is sequence_conflict', function () { pm.expect(pm.response.json().code).to.eql('sequence_conflict'); });"
+          ] } }]
+        }
+      ]
+    },
+    {
+      "name": "Admin Applications - unauthorized",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/v1/admin/applications", "host": ["{{baseUrl}}"], "path": ["v1", "admin", "applications"] }
+      },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('status is 401', function () { pm.response.to.have.status(401); });",
+        "pm.test('error code is unauthorized', function () { pm.expect(pm.response.json().code).to.eql('unauthorized'); });"
+      ] } }]
+    }
+  ]
+}
