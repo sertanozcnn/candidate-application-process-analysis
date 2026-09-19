@@ -49,3 +49,8 @@ playwright-report/
 test-results/
 
 # Keep SQL migrations and dependency lockfiles versioned.
+
+# Local agent/private planning files; do not publish
+agents/
+.opencode/
+opencode.json
